@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pandey Family Tree</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #C9A84C;
+    --gold-light: #E8C97A;
+    --gold-pale: #F5E6C0;
+    --ink: #1A120B;
+    --ink-mid: #3D2B1F;
+    --cream: #FAF5EC;
+    --parchment: #F0E6D0;
+    --rust: #8B3A2A;
+    --line: #C9A84C88;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--cream);
+    font-family: 'Crimson Pro', Georgia, serif;
+    color: var(--ink);
+    min-height: 100vh;
+    overflow-x: auto;
+  }
+
+  /* Parchment texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .page {
+    position: relative;
+    z-index: 1;
+    padding: 40px 20px 60px;
+    min-width: 1100px;
+  }
+
+  /* Header */
+  header {
+    text-align: center;
+    margin-bottom: 48px;
+    animation: fadeDown 0.8s ease both;
+  }
+
+  header .eyebrow {
+    font-family: 'Crimson Pro', serif;
+    font-style: italic;
+    font-size: 14px;
+    letter-spacing: 4px;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(36px, 5vw, 60px);
+    font-weight: 900;
+    color: var(--ink);
+    line-height: 1.1;
+    letter-spacing: -1px;
+  }
+
+  header h1 span { color: var(--gold); }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin: 16px auto 0;
+    max-width: 400px;
+  }
+  .divider-line { flex: 1; height: 1px; background: var(--gold); opacity: 0.5; }
+  .divider-diamond {
+    width: 8px; height: 8px;
+    background: var(--gold);
+    transform: rotate(45deg);
+  }
+
+  /* Tree container */
+  .tree {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+
+  /* Generation rows */
+  .gen-row {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    position: relative;
+    width: 100%;
+  }
+
+  .gen-label {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: 'Crimson Pro', serif;
+    font-style: italic;
+    font-size: 12px;
+    color: var(--gold);
+    letter-spacing: 2px;
+    writing-mode: vertical-lr;
+    text-orientation: mixed;
+    transform: translateY(-50%) rotate(180deg);
+    opacity: 0.7;
+  }
+
+  /* Node cards */
+  .node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .card {
+    background: var(--parchment);
+    border: 1.5px solid var(--gold);
+    border-radius: 4px;
+    padding: 10px 16px;
+    text-align: center;
+    position: relative;
+    cursor: default;
+    transition: all 0.25s ease;
+    box-shadow: 2px 3px 12px #C9A84C22, inset 0 0 0 1px #FFFFFF60;
+    min-width: 120px;
+    max-width: 150px;
+  }
+
+  .card:hover {
+    transform: translateY(-3px);
+    box-shadow: 4px 8px 24px #C9A84C44, inset 0 0 0 1px #FFFFFF80;
+    border-color: var(--gold-light);
+    background: #FFF9EE;
+  }
+
+  .card .name {
+    font-family: 'Playfair Display', serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.4;
+  }
+
+  .card .surname {
+    font-family: 'Crimson Pro', serif;
+    font-size: 11px;
+    font-weight: 300;
+    color: var(--rust);
+    font-style: italic;
+    margin-top: 2px;
+  }
+
+  .card.root {
+    background: var(--ink);
+    border-color: var(--gold);
+    border-width: 2px;
+    padding: 14px 24px;
+    min-width: 180px;
+    box-shadow: 0 6px 30px #1A120B55, 0 0 0 4px #C9A84C22;
+  }
+  .card.root .name { color: var(--gold-light); font-size: 15px; }
+  .card.root .surname { color: var(--gold); opacity: 0.8; }
+  .card.root:hover { transform: translateY(-4px); box-shadow: 0 12px 40px #1A120B66, 0 0 0 4px #C9A84C44; }
+
+  .card.gen2 {
+    background: var(--ink-mid);
+    border-color: var(--gold);
+  }
+  .card.gen2 .name { color: var(--gold-pale); font-size: 13px; }
+  .card.gen2 .surname { color: var(--gold); opacity: 0.7; }
+  .card.gen2:hover { background: #4A3527; }
+
+  .card.deceased::after {
+    content: '✦ स्वर्गीय';
+    display: block;
+    font-size: 9px;
+    color: var(--gold);
+    opacity: 0.6;
+    font-style: italic;
+    margin-top: 4px;
+    letter-spacing: 1px;
+  }
+
+  /* Connectors via SVG */
+  .connector-svg {
+    width: 100%;
+    overflow: visible;
+    display: block;
+  }
+
+  /* Spacing helpers */
+  .spacer-v { height: 16px; }
+  .spacer-v-lg { height: 24px; }
+
+  /* Gen rows layout */
+  .gen1-row { margin-bottom: 0; }
+  .gen2-row { gap: 0; }
+  .gen3-row { gap: 0; }
+  .gen4-row { gap: 0; }
+
+  .gen2-node { margin: 0 60px; }
+  .gen3-node { margin: 0 10px; }
+  .gen4-node { margin: 0 14px; }
+
+  /* Animation delays per generation */
+  .gen1-row .node { animation-delay: 0.1s; }
+  .gen2-row .node:nth-child(1) { animation-delay: 0.3s; }
+  .gen2-row .node:nth-child(2) { animation-delay: 0.4s; }
+  .gen2-row .node:nth-child(3) { animation-delay: 0.5s; }
+  .gen3-row .node:nth-child(1) { animation-delay: 0.6s; }
+  .gen3-row .node:nth-child(2) { animation-delay: 0.65s; }
+  .gen3-row .node:nth-child(3) { animation-delay: 0.7s; }
+  .gen3-row .node:nth-child(4) { animation-delay: 0.75s; }
+  .gen3-row .node:nth-child(5) { animation-delay: 0.8s; }
+  .gen3-row .node:nth-child(6) { animation-delay: 0.85s; }
+  .gen3-row .node:nth-child(7) { animation-delay: 0.9s; }
+  .gen4-row .node:nth-child(1) { animation-delay: 1.0s; }
+  .gen4-row .node:nth-child(2) { animation-delay: 1.05s; }
+  .gen4-row .node:nth-child(3) { animation-delay: 1.1s; }
+  .gen4-row .node:nth-child(4) { animation-delay: 1.15s; }
+  .gen4-row .node:nth-child(5) { animation-delay: 1.2s; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    margin-top: 56px;
+    font-family: 'Crimson Pro', serif;
+    font-style: italic;
+    font-size: 13px;
+    color: var(--gold);
+    opacity: 0.6;
+    letter-spacing: 2px;
+    animation: fadeUp 1s ease 1.4s both;
+  }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin-top: 32px;
+    animation: fadeUp 0.8s ease 1.3s both;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--ink-mid);
+    font-style: italic;
+  }
+  .legend-swatch {
+    width: 16px; height: 16px;
+    border-radius: 2px;
+    border: 1.5px solid var(--gold);
+    flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="eyebrow">Vansh Vriksha · वंश वृक्ष</div>
+    <h1>The <span>Pandey</span> Family</h1>
+    <div class="divider">
+      <div class="divider-line"></div>
+      <div class="divider-diamond"></div>
+      <div class="divider-line"></div>
+    </div>
+  </header>
+
+  <!-- SVG tree drawn with absolute positioning over a relative container -->
+  <div style="position:relative; width:100%; overflow:visible;">
+
+    <svg id="lines" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible;" xmlns="http://www.w3.org/2000/svg"></svg>
+
+    <div class="tree" id="tree">
+
+      <!-- GEN 1 -->
+      <div class="gen-row gen1-row" style="justify-content:center;">
+        <div class="node" id="n-gov">
+          <div class="card root">
+            <div class="name">Govinda Prasad</div>
+            <div class="surname">Pandey</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="spacer-v-lg"></div>
+
+      <!-- GEN 2 -->
+      <div class="gen-row gen2-row" id="gen2row">
+        <div class="node gen2-node" id="n-nar">
+          <div class="card gen2">
+            <div class="name">Narsingh Prasad</div>
+            <div class="surname">Pandey</div>
+          </div>
+        </div>
+        <div class="node gen2-node" id="n-gau">
+          <div class="card gen2 deceased">
+            <div class="name">Gauri Shankar</div>
+            <div class="surname">Pandey</div>
+          </div>
+        </div>
+        <div class="node gen2-node" id="n-dam">
+          <div class="card gen2">
+            <div class="name">Damodar Prasad</div>
+            <div class="surname">Pandey</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="spacer-v-lg"></div>
+
+      <!-- GEN 3 (children of Gauri Shankar) -->
+      <div class="gen-row gen3-row" id="gen3row">
+        <div class="node gen3-node" id="n-bip">
+          <div class="card deceased">
+            <div class="name">Bipin Bihari</div>
+            <div class="surname">Pandey</div>
+          </div>
+        </div>
+        <div class="node gen3-node" id="n-gan">
+          <div class="card deceased">
+            <div class="name">Ganesh Prasad</div>
+            <div class="surname">Pandey</div>
+          </div>
+        </div>
+        <div class="node gen3-node" id="n-ram">
+          <div class="card deceased">
+            <div class="name">Ram Bhajan</div>
+            <div class="surname">Pandey</div>
+          </div>
+        </div>
+        <div class="node gen3-node" id="n-arj">
+          <div class="card deceased">
+            <div class="name">Arjun Prasad</div>
+            <div class="surname">Pandey</div>
+          </div>
+        </div>
+        <div class="node gen3-node" id="n-kai">
+          <div class="card deceased">
+            <div class="name">Kailasa Prasad</div>
+            <div class="surname">Pandey</div>
+          </div>
+        </div>
+        <div class="node gen3-node" id="n-jai">
+          <div class="card deceased">
+            <div class="name">Jai Prakash</div>
+            <div class="surname">Pandey</div>
+          </div>
+        </div>
+        <div class="node gen3-node" id="n-rad">
+          <div class="card deceased">
+            <div class="name">Radhe Raman</div>
+            <div class="surname">Pandey</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="spacer-v-lg"></div>
+
+      <!-- GEN 4 (children of Arjun Prasad) -->
+      <div class="gen-row gen4-row" id="gen4row">
+        <div class="node gen4-node" id="n-kun">
+          <div class="card">
+            <div class="name">Kundan Kumar</div>
+            <div class="surname">Pandey</div>
+          </div>
+        </div>
+        <div class="node gen4-node" id="n-jit">
+          <div class="card">
+            <div class="name">Jitendra</div>
+            <div class="surname">Pandey</div>
+          </div>
+        </div>
+        <div class="node gen4-node" id="n-man">
+          <div class="card">
+            <div class="name">Manmohan</div>
+            <div class="surname">Pandey</div>
+          </div>
+        </div>
+        <div class="node gen4-node" id="n-sha">
+          <div class="card">
+            <div class="name">Shambhu Nath</div>
+            <div class="surname">Pandey</div>
+          </div>
+        </div>
+        <div class="node gen4-node" id="n-jat">
+          <div class="card">
+            <div class="name">Jatadhara</div>
+            <div class="surname">Pandey</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end .tree -->
+  </div><!-- end relative wrapper -->
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-swatch" style="background:#1A120B;"></div> Root Ancestor</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#3D2B1F;"></div> Generation 2</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#F0E6D0;"></div> Generation 3</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#F0E6D0; opacity:0.7;"></div> Generation 4</div>
+    <div class="legend-item" style="font-style:italic; color:#C9A84C;">✦ स्वर्गीय = Deceased</div>
+  </div>
+
+  <footer>Four generations of the Pandey lineage</footer>
+
+</div>
+
+<script>
+// Draw connector lines using getBoundingClientRect after layout
+function center(el) {
+  const r = el.getBoundingClientRect();
+  const pr = document.querySelector('.page').getBoundingClientRect();
+  // Relative to the SVG container (the relative div)
+  const cont = document.querySelector('[style*="position:relative"]').getBoundingClientRect();
+  return {
+    x: r.left + r.width / 2 - cont.left,
+    y: r.top + r.height / 2 - cont.top,
+    top: r.top - cont.top,
+    bottom: r.bottom - cont.top,
+    left: r.left - cont.left,
+    right: r.right - cont.left,
+    width: r.width,
+    height: r.height
+  };
+}
+
+function drawLines() {
+  const svg = document.getElementById('lines');
+  svg.innerHTML = '';
+
+  const stroke = '#C9A84C';
+  const sw = 1.5;
+
+  function line(x1,y1,x2,y2, opacity=0.7) {
+    const l = document.createElementNS('http://www.w3.org/2000/svg','line');
+    l.setAttribute('x1',x1); l.setAttribute('y1',y1);
+    l.setAttribute('x2',x2); l.setAttribute('y2',y2);
+    l.setAttribute('stroke', stroke);
+    l.setAttribute('stroke-width', sw);
+    l.setAttribute('opacity', opacity);
+    svg.appendChild(l);
+  }
+
+  function vdown(id, length=24) {
+    const c = center(document.getElementById(id).querySelector('.card'));
+    line(c.x, c.bottom, c.x, c.bottom + length);
+    return { x: c.x, y: c.bottom + length };
+  }
+
+  // Gen1 → Gen2
+  const gov = center(document.getElementById('n-gov').querySelector('.card'));
+  const nar = center(document.getElementById('n-nar').querySelector('.card'));
+  const gau = center(document.getElementById('n-gau').querySelector('.card'));
+  const dam = center(document.getElementById('n-dam').querySelector('.card'));
+
+  const midY1 = gov.bottom + 16;
+  // Vertical down from Gov
+  line(gov.x, gov.bottom, gov.x, midY1);
+  // Horizontal bar across all 3 children
+  line(nar.x, midY1, dam.x, midY1);
+  // Verticals down to each child
+  line(nar.x, midY1, nar.x, nar.top);
+  line(gau.x, midY1, gau.x, gau.top);
+  line(dam.x, midY1, dam.x, dam.top);
+
+  // Gen2 Gauri Shankar → Gen3 children
+  const gen3ids = ['n-bip','n-gan','n-ram','n-arj','n-kai','n-jai','n-rad'];
+  const gen3cards = gen3ids.map(id => center(document.getElementById(id).querySelector('.card')));
+
+  const midY2 = gau.bottom + 16;
+  line(gau.x, gau.bottom, gau.x, midY2);
+  line(gen3cards[0].x, midY2, gen3cards[gen3cards.length-1].x, midY2, 0.6);
+  gen3cards.forEach(c => {
+    line(c.x, midY2, c.x, c.top, 0.7);
+  });
+
+  // Gen3 Arjun Prasad → Gen4 children
+  const arj = center(document.getElementById('n-arj').querySelector('.card'));
+  const gen4ids = ['n-kun','n-jit','n-man','n-sha','n-jat'];
+  const gen4cards = gen4ids.map(id => center(document.getElementById(id).querySelector('.card')));
+
+  const midY3 = arj.bottom + 16;
+  line(arj.x, arj.bottom, arj.x, midY3);
+  line(gen4cards[0].x, midY3, gen4cards[gen4cards.length-1].x, midY3, 0.6);
+  gen4cards.forEach(c => {
+    line(c.x, midY3, c.x, c.top, 0.7);
+  });
+
+  // Update SVG height
+  const cont = document.querySelector('[style*="position:relative"]').getBoundingClientRect();
+  svg.setAttribute('viewBox', `0 0 ${cont.width} ${cont.height}`);
+}
+
+// Draw on load and resize
+window.addEventListener('load', () => { setTimeout(drawLines, 100); });
+window.addEventListener('resize', drawLines);
+</script>
+</body>
+</html>
